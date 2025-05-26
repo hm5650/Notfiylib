@@ -22,7 +22,7 @@ local function notify(title, desc, duration, bgColor, outlineColor, iconId)
     notification.BackgroundTransparency = 0
     notification.BorderSizePixel = 0
     notification.Position = UDim2.new(1, 10, 0.05, 0) -- Start off-screen to the right
-    notification.Size = UDim2.new(0, 280, 0, 0) -- More compact width, start with height 0 for animation
+    notification.Size = UDim2.new(0, 250, 0, 0) -- More compact width, start with height 0 for animation
     notification.ZIndex = 100
     notification.ClipsDescendants = true
     notification.Parent = parentGui
@@ -69,8 +69,8 @@ local function notify(title, desc, duration, bgColor, outlineColor, iconId)
     icon.ImageRectSize = Vector2.new(36, 36)
     icon.ImageRectOffset = Vector2.new(964, 324)
     icon.BackgroundTransparency = 1
-    icon.Position = UDim2.new(0, 10, 0, 12) -- More compact positioning
-    icon.Size = UDim2.new(0, 20, 0, 20) -- Smaller icon
+    icon.Position = UDim2.new(0, 10, 0, 10) -- More compact positioning
+    icon.Size = UDim2.new(0, 18, 0, 18) -- Smaller icon
     icon.ZIndex = 101
     icon.Parent = notification
     
@@ -79,11 +79,11 @@ local function notify(title, desc, duration, bgColor, outlineColor, iconId)
     titleLabel.Name = "Title"
     titleLabel.Text = title or "Notification"
     titleLabel.TextColor3 = Color3.new(1, 1, 1)
-    titleLabel.TextSize = 16 -- Smaller text
+    titleLabel.TextSize = 14 -- Smaller text
     titleLabel.Font = Enum.Font.GothamSemibold
     titleLabel.BackgroundTransparency = 1
-    titleLabel.Position = UDim2.new(0, 40, 0, 12) -- More compact
-    titleLabel.Size = UDim2.new(1, -50, 0, 20) -- More compact
+    titleLabel.Position = UDim2.new(0, 35, 0, 10) -- More compact
+    titleLabel.Size = UDim2.new(1, -40, 0, 18) -- More compact
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.ZIndex = 101
     titleLabel.Parent = notification
@@ -93,61 +93,56 @@ local function notify(title, desc, duration, bgColor, outlineColor, iconId)
     descLabel.Name = "Description"
     descLabel.Text = desc or ""
     descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    descLabel.TextSize = 13 -- Smaller text
+    descLabel.TextSize = 12 -- Smaller text
     descLabel.Font = Enum.Font.Gotham
     descLabel.BackgroundTransparency = 1
-    descLabel.Position = UDim2.new(0, 40, 0, 38) -- More compact
-    descLabel.Size = UDim2.new(1, -50, 1, -50) -- More compact
+    descLabel.Position = UDim2.new(0, 10, 0, 35) -- More compact
+    descLabel.Size = UDim2.new(1, -20, 1, -45) -- More compact
     descLabel.TextXAlignment = Enum.TextXAlignment.Left
     descLabel.TextYAlignment = Enum.TextYAlignment.Top
     descLabel.TextWrapped = true
     descLabel.ZIndex = 101
     descLabel.Parent = notification
     
-    -- Create close button (X in top right)
-    local closeButton = Instance.new("ImageButton")
-    closeButton.Name = "CloseButton"
-    closeButton.Image = "rbxassetid://3926305904"
-    closeButton.ImageRectSize = Vector2.new(24, 24)
-    closeButton.ImageRectOffset = Vector2.new(284, 4)
-    closeButton.BackgroundTransparency = 1
-    closeButton.Position = UDim2.new(1, -30, 0, 10) -- More compact
-    closeButton.Size = UDim2.new(0, 20, 0, 20) -- Smaller button
-    closeButton.ZIndex = 102
-    closeButton.Parent = notification
-    
     -- Create duration bar (more subtle)
     local durationBar = Instance.new("Frame")
     durationBar.Name = "DurationBar"
     durationBar.BackgroundColor3 = outlineColor
     durationBar.BorderSizePixel = 0
-    durationBar.Position = UDim2.new(0, 0, 1, -3) -- Thinner bar
-    durationBar.Size = UDim2.new(1, 0, 0, 3) -- Thinner bar
+    durationBar.Position = UDim2.new(0, 0, 1, -2) -- Thinner bar
+    durationBar.Size = UDim2.new(1, 0, 0, 2) -- Thinner bar
     durationBar.ZIndex = 101
     durationBar.Parent = notification
     
     -- Calculate required height based on text (more compact)
     local textService = game:GetService("TextService")
     local textSize = textService:GetTextSize(descLabel.Text, descLabel.TextSize, descLabel.Font, Vector2.new(descLabel.AbsoluteSize.X, math.huge))
-    local requiredHeight = math.clamp(textSize.Y + 60, 80, 250) -- More compact height calculation
+    local requiredHeight = math.clamp(textSize.Y + 50, 70, 200) -- More compact height calculation
     
     -- Animate notification entrance
     local slideIn = game:GetService("TweenService"):Create(
         notification,
-        TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-        {Position = UDim2.new(1, -290, 0.05, 0), Size = UDim2.new(0, 280, 0, requiredHeight)}
+        TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out, 0, false, 0.1),
+        {Position = UDim2.new(1, -260, 0.05, 0), Size = UDim2.new(0, 250, 0, requiredHeight)}
     )
     
     -- Animation for duration bar
     local durationTween = game:GetService("TweenService"):Create(
         durationBar,
         TweenInfo.new(duration, Enum.EasingStyle.Linear),
-        {Size = UDim2.new(0, 0, 0, 3)}
+        {Size = UDim2.new(0, 0, 0, 2)}
     )
     
-    -- Function to close notification with fade and slide
+    -- Function to close notification with animations and sound
     local function closeNotification()
         if not notification or not notification.Parent then return end
+        
+        -- Play close sound
+        local closeSound = Instance.new("Sound")
+        closeSound.SoundId = "rbxassetid://4590662766"
+        closeSound.Volume = 0.1
+        closeSound.Parent = game:GetService("SoundService")
+        closeSound:Play()
         
         -- Stop all tweens
         durationTween:Cancel()
@@ -191,6 +186,13 @@ local function notify(title, desc, duration, bgColor, outlineColor, iconId)
             tween:Play()
         end
         
+        -- Shrink animation
+        local shrinkTween = game:GetService("TweenService"):Create(
+            notification,
+            TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+            {Size = UDim2.new(0, 250, 0, 0)}
+        )
+        
         -- Slide out animation
         local slideOut = game:GetService("TweenService"):Create(
             notification,
@@ -198,6 +200,7 @@ local function notify(title, desc, duration, bgColor, outlineColor, iconId)
             {Position = UDim2.new(1, 10, 0.05, 0)}
         )
         
+        shrinkTween:Play()
         slideOut:Play()
         slideOut.Completed:Wait()
         
@@ -206,19 +209,39 @@ local function notify(title, desc, duration, bgColor, outlineColor, iconId)
         end
     end
     
+    -- Click-to-close functionality for the entire notification
+    notification.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            -- Button press animation
+            local pressTween = game:GetService("TweenService"):Create(
+                notification,
+                TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                {Size = UDim2.new(0, 245, 0, requiredHeight - 5)}
+            )
+            pressTween:Play()
+            pressTween.Completed:Wait()
+            
+            local releaseTween = game:GetService("TweenService"):Create(
+                notification,
+                TweenInfo.new(0.1, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out),
+                {Size = UDim2.new(0, 250, 0, requiredHeight)}
+            )
+            releaseTween:Play()
+            
+            closeNotification()
+        end
+    end)
+    
     -- Play ripple animation first
     rippleTween:Play()
     task.wait(0.1) -- Small delay before sliding in
     
-    -- Then slide in the notification
+    -- Then slide in the notification with bounce effect
     slideIn:Play()
     
     -- Start duration bar after slide in completes
     slideIn.Completed:Wait()
     durationTween:Play()
-    
-    -- Close button functionality
-    closeButton.MouseButton1Click:Connect(closeNotification)
     
     -- Auto-close after duration
     spawn(function()
