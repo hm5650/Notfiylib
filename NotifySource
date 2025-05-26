@@ -15,21 +15,42 @@ local function notify(title, desc, duration, bgColor, outlineColor, iconId)
     -- Get parent GUI
     local parentGui = game:GetService("CoreGui"):FindFirstChild("RobloxGui") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
     
+    -- Create a container for all notifications if it doesn't exist
+    local notificationContainer = parentGui:FindFirstChild("NotificationContainer")
+    if not notificationContainer then
+        notificationContainer = Instance.new("Frame")
+        notificationContainer.Name = "NotificationContainer"
+        notificationContainer.BackgroundTransparency = 1
+        notificationContainer.Size = UDim2.new(0, 270, 1, 0) -- Width to accommodate notification + margin
+        notificationContainer.Position = UDim2.new(1, -270, 0, 0) -- Right side of screen
+        notificationContainer.AnchorPoint = Vector2.new(1, 0)
+        notificationContainer.ZIndex = 99
+        notificationContainer.Parent = parentGui
+    end
+    
+    -- Calculate position based on existing notifications (stacking downwards)
+    local yOffset = 10
+    for _, existingNotification in ipairs(notificationContainer:GetChildren()) do
+        if existingNotification:IsA("Frame") and existingNotification.Name == "Notification" then
+            yOffset = yOffset + existingNotification.Size.Y.Offset + 10
+        end
+    end
+    
     -- Create main frame with rounded corners
     local notification = Instance.new("Frame")
     notification.Name = "Notification"
     notification.BackgroundColor3 = bgColor
     notification.BackgroundTransparency = 0
     notification.BorderSizePixel = 0
-    notification.Position = UDim2.new(1, 10, 0.05, 0) -- Start off-screen to the right
-    notification.Size = UDim2.new(0, 250, 0, 0) -- More compact width, start with height 0 for animation
+    notification.Position = UDim2.new(0, 0, 0, yOffset)
+    notification.Size = UDim2.new(0, 250, 0, 0) -- Start with height 0 for animation
     notification.ZIndex = 100
     notification.ClipsDescendants = true
-    notification.Parent = parentGui
+    notification.Parent = notificationContainer
     
     -- Add corner rounding
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6) -- Smaller radius for more compact look
+    corner.CornerRadius = UDim.new(0, 6)
     corner.Parent = notification
     
     -- Create white outline
@@ -62,68 +83,84 @@ local function notify(title, desc, duration, bgColor, outlineColor, iconId)
         {Size = UDim2.new(1.5, 0, 1.5, 0), BackgroundTransparency = 1}
     )
     
-    -- Create icon (customizable)
+    -- Create icon
     local icon = Instance.new("ImageLabel")
     icon.Name = "Icon"
     icon.Image = "rbxassetid://"..iconId
     icon.ImageRectSize = Vector2.new(36, 36)
     icon.ImageRectOffset = Vector2.new(964, 324)
     icon.BackgroundTransparency = 1
-    icon.Position = UDim2.new(0, 10, 0, 10) -- More compact positioning
-    icon.Size = UDim2.new(0, 18, 0, 18) -- Smaller icon
+    icon.Position = UDim2.new(0, 10, 0, 10)
+    icon.Size = UDim2.new(0, 18, 0, 18)
     icon.ZIndex = 101
     icon.Parent = notification
     
-    -- Create title text (more compact)
+    -- Create title text
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Name = "Title"
     titleLabel.Text = title or "Notification"
     titleLabel.TextColor3 = Color3.new(1, 1, 1)
-    titleLabel.TextSize = 14 -- Smaller text
+    titleLabel.TextSize = 14
     titleLabel.Font = Enum.Font.GothamSemibold
     titleLabel.BackgroundTransparency = 1
-    titleLabel.Position = UDim2.new(0, 35, 0, 10) -- More compact
-    titleLabel.Size = UDim2.new(1, -40, 0, 18) -- More compact
+    titleLabel.Position = UDim2.new(0, 35, 0, 10)
+    titleLabel.Size = UDim2.new(1, -40, 0, 18)
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.ZIndex = 101
     titleLabel.Parent = notification
     
-    -- Create description text (more compact)
+    -- Create description text
     local descLabel = Instance.new("TextLabel")
     descLabel.Name = "Description"
     descLabel.Text = desc or ""
     descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    descLabel.TextSize = 12 -- Smaller text
+    descLabel.TextSize = 12
     descLabel.Font = Enum.Font.Gotham
     descLabel.BackgroundTransparency = 1
-    descLabel.Position = UDim2.new(0, 10, 0, 35) -- More compact
-    descLabel.Size = UDim2.new(1, -20, 1, -45) -- More compact
+    descLabel.Position = UDim2.new(0, 10, 0, 35)
+    descLabel.Size = UDim2.new(1, -20, 1, -45)
     descLabel.TextXAlignment = Enum.TextXAlignment.Left
     descLabel.TextYAlignment = Enum.TextYAlignment.Top
     descLabel.TextWrapped = true
     descLabel.ZIndex = 101
     descLabel.Parent = notification
     
-    -- Create duration bar (more subtle)
+    -- Create duration bar
     local durationBar = Instance.new("Frame")
     durationBar.Name = "DurationBar"
     durationBar.BackgroundColor3 = outlineColor
     durationBar.BorderSizePixel = 0
-    durationBar.Position = UDim2.new(0, 0, 1, -2) -- Thinner bar
-    durationBar.Size = UDim2.new(1, 0, 0, 2) -- Thinner bar
+    durationBar.Position = UDim2.new(0, 0, 1, -2)
+    durationBar.Size = UDim2.new(1, 0, 0, 2)
     durationBar.ZIndex = 101
     durationBar.Parent = notification
     
-    -- Calculate required height based on text (more compact)
+    -- Calculate required height based on text
     local textService = game:GetService("TextService")
     local textSize = textService:GetTextSize(descLabel.Text, descLabel.TextSize, descLabel.Font, Vector2.new(descLabel.AbsoluteSize.X, math.huge))
-    local requiredHeight = math.clamp(textSize.Y + 50, 70, 200) -- More compact height calculation
+    local requiredHeight = math.clamp(textSize.Y + 50, 70, 200)
+    
+    -- Function to update positions of all notifications (for stacking)
+    local function updateNotificationPositions()
+        local newYOffset = 10
+        for _, existingNotification in ipairs(notificationContainer:GetChildren()) do
+            if existingNotification:IsA("Frame") and existingNotification.Name == "Notification" and existingNotification ~= notification then
+                -- Tween each notification to its new position
+                game:GetService("TweenService"):Create(
+                    existingNotification,
+                    TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                    {Position = UDim2.new(0, 0, 0, newYOffset)}
+                ):Play()
+                newYOffset = newYOffset + existingNotification.Size.Y.Offset + 10
+            end
+        end
+    end
     
     -- Animate notification entrance
     local slideIn = game:GetService("TweenService"):Create(
         notification,
-        TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out, 0, false, 0.1),
-        {Position = UDim2.new(1, -260, 0.05, 0), Size = UDim2.new(0, 250, 0, requiredHeight)}
+        TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+        {Size = UDim2.new(0, 250, 0, requiredHeight)}
     )
     
     -- Animation for duration bar
@@ -147,65 +184,57 @@ local function notify(title, desc, duration, bgColor, outlineColor, iconId)
         -- Stop all tweens
         durationTween:Cancel()
         
-        -- Create fade out tweens for all elements
-        local fadeTweens = {}
-        
-        -- Fade out main frame
-        table.insert(fadeTweens, game:GetService("TweenService"):Create(
+        -- Fade out all elements
+        local fadeTween = game:GetService("TweenService"):Create(
             notification,
-            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
             {BackgroundTransparency = 1}
-        ))
+        )
         
         -- Fade out outline
-        table.insert(fadeTweens, game:GetService("TweenService"):Create(
+        local outlineFade = game:GetService("TweenService"):Create(
             outline,
-            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
             {Transparency = 1}
-        ))
+        )
         
         -- Fade out all text and images
         for _, child in ipairs(notification:GetDescendants()) do
             if child:IsA("TextLabel") then
-                table.insert(fadeTweens, game:GetService("TweenService"):Create(
+                game:GetService("TweenService"):Create(
                     child,
-                    TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                    TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
                     {TextTransparency = 1}
-                ))
+                ):Play()
             elseif child:IsA("ImageLabel") or child:IsA("ImageButton") then
-                table.insert(fadeTweens, game:GetService("TweenService"):Create(
+                game:GetService("TweenService"):Create(
                     child,
-                    TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                    TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
                     {ImageTransparency = 1}
-                ))
+                ):Play()
             end
-        end
-        
-        -- Play all fade tweens
-        for _, tween in ipairs(fadeTweens) do
-            tween:Play()
         end
         
         -- Shrink animation
         local shrinkTween = game:GetService("TweenService"):Create(
             notification,
-            TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+            TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
             {Size = UDim2.new(0, 250, 0, 0)}
         )
         
-        -- Slide out animation
-        local slideOut = game:GetService("TweenService"):Create(
-            notification,
-            TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 0.2),
-            {Position = UDim2.new(1, 10, 0.05, 0)}
-        )
-        
+        -- Play all animations
+        fadeTween:Play()
+        outlineFade:Play()
         shrinkTween:Play()
-        slideOut:Play()
-        slideOut.Completed:Wait()
         
+        -- Wait for animations to complete
+        shrinkTween.Completed:Wait()
+        
+        -- Remove the notification
         if notification and notification.Parent then
             notification:Destroy()
+            -- Update positions of remaining notifications
+            updateNotificationPositions()
         end
     end
     
@@ -236,7 +265,7 @@ local function notify(title, desc, duration, bgColor, outlineColor, iconId)
     rippleTween:Play()
     task.wait(0.1) -- Small delay before sliding in
     
-    -- Then slide in the notification with bounce effect
+    -- Then expand the notification
     slideIn:Play()
     
     -- Start duration bar after slide in completes
