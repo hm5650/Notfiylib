@@ -1,8 +1,9 @@
-local function notify(title, desc, duration, bgColor, outlineColor)
+local function notify(title, desc, duration, bgColor, outlineColor, iconId)
     -- Default values
     duration = duration or 5
     bgColor = bgColor or Color3.fromRGB(15, 15, 15)
     outlineColor = outlineColor or Color3.fromRGB(255, 255, 255)
+    iconId = iconId or "3926305904" -- Default info icon
     
     -- Create notification sound
     local sound = Instance.new("Sound")
@@ -61,10 +62,10 @@ local function notify(title, desc, duration, bgColor, outlineColor)
         {Size = UDim2.new(1.5, 0, 1.5, 0), BackgroundTransparency = 1}
     )
     
-    -- Create icon (more compact)
+    -- Create icon (customizable)
     local icon = Instance.new("ImageLabel")
     icon.Name = "Icon"
-    icon.Image = "rbxassetid://3926305904" -- Default info icon
+    icon.Image = "rbxassetid://"..iconId
     icon.ImageRectSize = Vector2.new(36, 36)
     icon.ImageRectOffset = Vector2.new(964, 324)
     icon.BackgroundTransparency = 1
@@ -144,6 +145,67 @@ local function notify(title, desc, duration, bgColor, outlineColor)
         {Size = UDim2.new(0, 0, 0, 3)}
     )
     
+    -- Function to close notification with fade and slide
+    local function closeNotification()
+        if not notification or not notification.Parent then return end
+        
+        -- Stop all tweens
+        durationTween:Cancel()
+        
+        -- Create fade out tweens for all elements
+        local fadeTweens = {}
+        
+        -- Fade out main frame
+        table.insert(fadeTweens, game:GetService("TweenService"):Create(
+            notification,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {BackgroundTransparency = 1}
+        ))
+        
+        -- Fade out outline
+        table.insert(fadeTweens, game:GetService("TweenService"):Create(
+            outline,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Transparency = 1}
+        ))
+        
+        -- Fade out all text and images
+        for _, child in ipairs(notification:GetDescendants()) do
+            if child:IsA("TextLabel") then
+                table.insert(fadeTweens, game:GetService("TweenService"):Create(
+                    child,
+                    TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                    {TextTransparency = 1}
+                ))
+            elseif child:IsA("ImageLabel") or child:IsA("ImageButton") then
+                table.insert(fadeTweens, game:GetService("TweenService"):Create(
+                    child,
+                    TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                    {ImageTransparency = 1}
+                ))
+            end
+        end
+        
+        -- Play all fade tweens
+        for _, tween in ipairs(fadeTweens) do
+            tween:Play()
+        end
+        
+        -- Slide out animation
+        local slideOut = game:GetService("TweenService"):Create(
+            notification,
+            TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 0.2),
+            {Position = UDim2.new(1, 10, 0.05, 0)}
+        )
+        
+        slideOut:Play()
+        slideOut.Completed:Wait()
+        
+        if notification and notification.Parent then
+            notification:Destroy()
+        end
+    end
+    
     -- Play ripple animation first
     rippleTween:Play()
     task.wait(0.1) -- Small delay before sliding in
@@ -155,75 +217,13 @@ local function notify(title, desc, duration, bgColor, outlineColor)
     slideIn.Completed:Wait()
     durationTween:Play()
     
-    -- Close button functionality with fade out
-    closeButton.MouseButton1Click:Connect(function()
-        durationTween:Cancel()
-        
-        -- Fade out animation
-        local fadeOut = game:GetService("TweenService"):Create(
-            notification,
-            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            {BackgroundTransparency = 1}
-        )
-        
-        -- Slide out animation
-        local slideOut = game:GetService("TweenService"):Create(
-            notification,
-            TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-            {Position = UDim2.new(1, 10, 0.05, 0)}
-        )
-        
-        -- Fade out text and elements
-        for _, child in ipairs(notification:GetDescendants()) do
-            if child:IsA("TextLabel") or child:IsA("ImageLabel") or child:IsA("ImageButton") then
-                game:GetService("TweenService"):Create(
-                    child,
-                    TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                    {TextTransparency = 1, ImageTransparency = 1}
-                ):Play()
-            end
-        end
-        
-        fadeOut:Play()
-        slideOut:Play()
-        slideOut.Completed:Wait()
-        notification:Destroy()
-    end)
+    -- Close button functionality
+    closeButton.MouseButton1Click:Connect(closeNotification)
     
-    -- Auto-close after duration with fade out
+    -- Auto-close after duration
     spawn(function()
-        task.wait(duration)
-        if notification and notification.Parent then
-            -- Fade out animation
-            local fadeOut = game:GetService("TweenService"):Create(
-                notification,
-                TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                {BackgroundTransparency = 1}
-            )
-            
-            -- Slide out animation
-            local slideOut = game:GetService("TweenService"):Create(
-                notification,
-                TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-                {Position = UDim2.new(1, 10, 0.05, 0)}
-            )
-            
-            -- Fade out text and elements
-            for _, child in ipairs(notification:GetDescendants()) do
-                if child:IsA("TextLabel") or child:IsA("ImageLabel") or child:IsA("ImageButton") then
-                    game:GetService("TweenService"):Create(
-                        child,
-                        TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                        {TextTransparency = 1, ImageTransparency = 1}
-                    ):Play()
-                end
-            end
-            
-            fadeOut:Play()
-            slideOut:Play()
-            slideOut.Completed:Wait()
-            notification:Destroy()
-        end
+        durationTween.Completed:Wait()
+        closeNotification()
     end)
     
     return notification
