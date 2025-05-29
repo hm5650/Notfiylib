@@ -1,3 +1,4 @@
+-- test
 local function notify(title, desc, duration, bgColor, outlineColor, iconId)
     -- Default values with improved color scheme
     duration = duration or 5
